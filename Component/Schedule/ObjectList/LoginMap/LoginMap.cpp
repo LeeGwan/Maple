@@ -39,7 +39,7 @@ void LoginMap::Update(bool* Islogin)
 		CheckSound = false;
 
 	}
-	// πË∞Ê ¿ÃπÃ¡ˆ
+	// Î∞∞Í≤Ω Ïù¥ÎØ∏ÏßÄ
 	ImGui::SetNextWindowPos(ImVec2(0, 0), ImGuiCond_Always);
 	ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize, ImGuiCond_Always);
 	ImGui::Begin("BackgroundWindow", nullptr,
@@ -48,11 +48,11 @@ void LoginMap::Update(bool* Islogin)
 		ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse |
 		ImGuiWindowFlags_NoBackground);
 
-	ImGui::Image((void*)LoginBackground, ImGui::GetIO().DisplaySize); // πË∞Ê ¿ÃπÃ¡ˆ∏¶ »≠∏È ¿¸√ºø°
+	ImGui::Image((void*)LoginBackground, ImGui::GetIO().DisplaySize); // Î∞∞Í≤Ω Ïù¥ÎØ∏ÏßÄÎ•º ÌôîÎ©¥ Ï†ÑÏ≤¥Ïóê
 	ImGui::End();
 
 
-	// ∑Œ±◊¿Œ UI ¿ÃπÃ¡ˆ + ¿‘∑¬ « µÂ
+	// Î°úÍ∑∏Ïù∏ UI Ïù¥ÎØ∏ÏßÄ + ÏûÖÎ†• ÌïÑÎìú
 	ImVec2 loginPos = ImVec2(950.0f, 300.0f);
 	ImVec2 loginSize = ImVec2(300.0f, 250.0f);
 
@@ -62,15 +62,15 @@ void LoginMap::Update(bool* Islogin)
 		ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize |
 		ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoCollapse| ImGuiWindowFlags_NoBackground| ImGuiWindowFlags_NoScrollbar);
 
-	ImGui::Image((void*)LoginUi, loginSize); // ∑Œ±◊¿Œ π⁄Ω∫ ¿ÃπÃ¡ˆ
+	ImGui::Image((void*)LoginUi, loginSize); // Î°úÍ∑∏Ïù∏ Î∞ïÏä§ Ïù¥ÎØ∏ÏßÄ
 	ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, 1));
-	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));         // πË∞Ê ≈ı∏Ì
-	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0, 0, 0, 0));  // »£πˆ Ω√µµ ≈ı∏Ì
+	ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0, 0, 0, 0));         // Î∞∞Í≤Ω Ìà¨Î™Ö
+	ImGui::PushStyleColor(ImGuiCol_FrameBgHovered, ImVec4(0, 0, 0, 0));  // Ìò∏Î≤Ñ ÏãúÎèÑ Ìà¨Î™Ö
 	ImGui::PushStyleColor(ImGuiCol_FrameBgActive, ImVec4(0, 0, 0, 0));
-	ImGui::SetCursorPos(ImVec2(25.0f, 50.0f)); // ¿ÃπÃ¡ˆ æ»¬  ¿ßƒ°ø° ∏¬√Á UI πËƒ°
+	ImGui::SetCursorPos(ImVec2(25.0f, 50.0f)); // Ïù¥ÎØ∏ÏßÄ ÏïàÏ™Ω ÏúÑÏπòÏóê ÎßûÏ∂∞ UI Î∞∞Ïπò
 	ImGui::Text("Username");
 	ImGui::SetCursorPosX(30.0f);
-	ImGui::PushItemWidth(220.0f); // ≈ÿΩ∫∆Æπ⁄Ω∫ ≥ ∫Ò
+	ImGui::PushItemWidth(220.0f); // ÌÖçÏä§Ìä∏Î∞ïÏä§ ÎÑàÎπÑ
 	ImGui::InputText("##username", _xGlobalStr_Account, IM_ARRAYSIZE(_xGlobalStr_Account));
 	ImGui::PopItemWidth();
 	
@@ -86,13 +86,16 @@ void LoginMap::Update(bool* Islogin)
 	if (ImGui::Button("Login", ImVec2(260.0f, 0))) 
 	{
 		*Islogin = G_ctx->LoginCheck.Login(_xGlobalStr_Account,_xGlobalStr_Password);
+		if(*Islogin)
+		{
 		G_ctx->G_ObjectManager->AddObjectManager("Maps");
 		G_ctx->G_ObjectManager->AddObjectManager("Player");
 		G_ctx->CanUseCalc = true;
+		}
 	}
 	ImGui::Dummy(ImVec2(0.0f, 10.0f));
 	ImGui::SetCursorPos(ImVec2(30.0f, 180.0f));
-	// πˆ∆∞ Ω∫≈∏¿œ
+	// Î≤ÑÌäº Ïä§ÌÉÄÏùº
 	ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.8f, 0.3f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.9f, 0.4f, 1.0f));
 	ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.1f, 0.7f, 0.2f, 1.0f));
