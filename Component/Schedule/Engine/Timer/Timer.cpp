@@ -1,7 +1,4 @@
 #include "Timer.h"
-#include <timeapi.h> // Sleep Á¤¹Ðµµ Çâ»ó
-#pragma comment(lib, "winmm.lib")
-#include "Timer.h"
 #include <timeapi.h>     // Windows Sleep 정확도 향상용
 #pragma comment(lib, "winmm.lib") // timeBeginPeriod / timeEndPeriod 사용 시 필요
 
