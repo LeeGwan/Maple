@@ -1,8 +1,6 @@
 #include "DamageObject.h"
 #include "../../../../Global.h"
 
-	#include "DamageObject.h"
-#include "../../../../Global.h"
 
 // ---------------------------------------
 // 생성자: 크리티컬 섹션 초기화
