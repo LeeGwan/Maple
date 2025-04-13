@@ -1,38 +1,37 @@
+// RenderObject.cpp - 전체 게임 렌더링 및 ImGui 출력 담당 클래스 구현
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "RenderingObject.h"
-#include"../Schedule.h"
-#include"../../../Global.h"
+#include "../Schedule.h"
+#include "../../../Global.h"
 #include <locale>
 #include <codecvt>
 
+// 생성자 - 윈도우 핸들 및 클래스 정보를 저장
 RenderObject::RenderObject()
 {
-        hwnd = G_ctx->MakeWindows->Get_HWND();
-        wc = G_ctx->MakeWindows->GetstaticWNDCLASSEXW();
-        window_pos = { 0,0 };
-
+    hwnd = G_ctx->MakeWindows->Get_HWND();
+    wc = G_ctx->MakeWindows->GetstaticWNDCLASSEXW();
+    window_pos = { 0, 0 };
 }
 
+// 소멸자 - ImGui 및 D3D 리소스 정리, 윈도우 제거
 RenderObject::~RenderObject()
 {
-
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 
-    //CleanupDeviceD3D();
     ::DestroyWindow(hwnd);
     ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
 }
 
+// Direct3D 11 디바이스 및 스왑체인 생성
 bool RenderObject::CreateDeviceD3D()
 {
-    DXGI_SWAP_CHAIN_DESC sd;
-    ZeroMemory(&sd, sizeof(sd));
+    DXGI_SWAP_CHAIN_DESC sd{};
     sd.BufferCount = 2;
-    sd.BufferDesc.Width = 0;
-    sd.BufferDesc.Height = 0;
     sd.BufferDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     sd.BufferDesc.RefreshRate.Numerator = 60;
     sd.BufferDesc.RefreshRate.Denominator = 1;
@@ -40,24 +39,29 @@ bool RenderObject::CreateDeviceD3D()
     sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     sd.OutputWindow = hwnd;
     sd.SampleDesc.Count = 1;
-    sd.SampleDesc.Quality = 0;
     sd.Windowed = TRUE;
     sd.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
 
-    UINT createDeviceFlags = 0;
-    //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
     D3D_FEATURE_LEVEL featureLevel;
-    const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
-    HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
-    if (res == DXGI_ERROR_UNSUPPORTED) // Try high-performance WARP software driver if hardware is not available.
-        res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext);
-    if (res != S_OK)
-        return false;
+    const D3D_FEATURE_LEVEL levelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0 };
+
+    HRESULT res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, 0,
+        levelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice,
+        &featureLevel, &g_pd3dDeviceContext);
+
+    // 하드웨어 실패 시 소프트웨어로 재시도
+    if (res == DXGI_ERROR_UNSUPPORTED)
+        res = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_WARP, nullptr, 0,
+            levelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice,
+            &featureLevel, &g_pd3dDeviceContext);
+
+    if (res != S_OK) return false;
 
     CreateRenderTarget();
     return true;
 }
 
+// 렌더 타겟 생성
 void RenderObject::CreateRenderTarget()
 {
     ID3D11Texture2D* pBackBuffer;
@@ -66,66 +70,55 @@ void RenderObject::CreateRenderTarget()
     pBackBuffer->Release();
 }
 
+// 렌더 타겟 정리
 void RenderObject::CleanupRenderTarget()
 {
     if (g_mainRenderTargetView) { g_mainRenderTargetView->Release(); g_mainRenderTargetView = nullptr; }
 }
 
+// ImGui 초기화
 void RenderObject::SetupImGui()
 {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad;
     io.Fonts->AddFontFromFileTTF("C:\\Windows\\Fonts\\malgun.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesKorean());
 
-
-   
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
     DrawManagers.DrawManager_Init();
-
-  
-  
 }
 
+// 로그인 상태에 따라 UI or 게임 씬 렌더링
 void RenderObject::DrawInterface()
 {
-
     if (!Islogin)
-    {
-        LoginMaps.Update(&Islogin);//true �� ����ȭ��
-    }
+        LoginMaps.Update(&Islogin); // 로그인 UI
     else
-    {
-       
-        DrawManagers.Draw();
-    }
-
+        DrawManagers.Draw();       // 전체 게임 오브젝트 출력
 }
 
+// 렌더링 메인 루프 - 프레임마다 호출
 void RenderObject::Main_Loop()
 {
-    const float clear_color_with_alpha[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
-    g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
+    const float clear_color[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+    g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color);
+
     ImGui_ImplDX11_NewFrame();
     ImGui_ImplWin32_NewFrame();
     ImGui::NewFrame();
-    {
-        DrawInterface();
-    }
 
+    DrawInterface(); // 실제 콘텐츠 그리기
 
     ImGui::Render();
-
-    g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
-
+    g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, nullptr);
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-    g_pSwapChain->Present(1, 0); // Present with vsync
+    g_pSwapChain->Present(1, 0); // VSync 켜고 출력
 }
 
+// D3D 리소스 해제
 void RenderObject::CleanupDeviceD3D()
 {
     CleanupRenderTarget();
@@ -134,9 +127,9 @@ void RenderObject::CleanupDeviceD3D()
     if (g_pd3dDevice) { g_pd3dDevice->Release(); g_pd3dDevice = nullptr; }
 }
 
+// 렌더러 초기화 진입점
 bool RenderObject::Init()
 {
-
     if (!CreateDeviceD3D())
     {
         CleanupDeviceD3D();
@@ -144,180 +137,114 @@ bool RenderObject::Init()
         return false;
     }
     SetupImGui();
-   // DrawManagers.DrawManager_Init();
     LoginMaps.init();
-    
+    return true;
 }
 
-RenderObject* RenderObject::Get_RenderObject(RenderObject* G_RenderObject)
-{
-    if (!G_RenderObject)
-        G_RenderObject = new RenderObject();
-    return G_RenderObject;
-}
-void RenderObject::Delete_RenderObject(RenderObject* G_RenderObject)
-{
-    delete G_RenderObject;
-    G_RenderObject = nullptr;
-
-}
-
-
-Vec2 RenderObject::DrawLevelNumber(int Value, ID3D11ShaderResourceView * digitTextures[10],Vec2 Pos, Vec2 Size)
-{
-        std::string levelStr = std::to_string(Value);
-        float spacing = 1.0f;              // ���� �� ���� (�ȼ� ����, ���ϸ� ���� ����)
-        Vec2 digitSize = Size;
-        for (char ch : levelStr)
-        {
-            if (!isdigit(ch)) continue;
-
-            int digit = ch - '0'; // '0' ~ '9' �� 0 ~ 9
-            Draw_Image(digitTextures[digit], Pos, Size, 0.0);
-            ImGui::SameLine();
-            Pos.x+= digitSize.x * 2 + spacing;
-        }
-        ImGui::NewLine();
-        return Pos;
-}
-
-
-
-
-
-
+// 텍스처 로드 (png 등) + 이미지 크기 반환
 bool RenderObject::LoadTextureFromFileDX11(const char* fileName, ID3D11ShaderResourceView** out_texture, Vec2& Size)
 {
-    // Load from disk into a raw RGBA buffer
-    int image_width;
-    int image_height;
-    unsigned char* image_data = stbi_load(fileName, &image_width, &image_height, NULL, 4);
-    if (image_data == NULL)
-        return false;
+    int w, h;
+    unsigned char* data = stbi_load(fileName, &w, &h, NULL, 4);
+    if (!data) return false;
 
-    // Create texture
-    D3D11_TEXTURE2D_DESC desc;
-    ZeroMemory(&desc, sizeof(desc));
-    desc.Width = image_width;
-    desc.Height = image_height;
+    D3D11_TEXTURE2D_DESC desc{};
+    desc.Width = w;
+    desc.Height = h;
     desc.MipLevels = 1;
     desc.ArraySize = 1;
     desc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     desc.SampleDesc.Count = 1;
     desc.Usage = D3D11_USAGE_DEFAULT;
     desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
-    desc.CPUAccessFlags = 0;
 
-    ID3D11Texture2D* pTexture = NULL;
-    D3D11_SUBRESOURCE_DATA subResource;
-    subResource.pSysMem = image_data;
-    subResource.SysMemPitch = desc.Width * 4;
-    subResource.SysMemSlicePitch = 0;
-   
-    g_pd3dDevice->CreateTexture2D(&desc, &subResource, &pTexture);
+    D3D11_SUBRESOURCE_DATA subResource = { data, w * 4, 0 };
+    ID3D11Texture2D* pTex = nullptr;
+    g_pd3dDevice->CreateTexture2D(&desc, &subResource, &pTex);
 
-    // Create texture view
-    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc;
-    ZeroMemory(&srvDesc, sizeof(srvDesc));
-    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    D3D11_SHADER_RESOURCE_VIEW_DESC srvDesc{};
+    srvDesc.Format = desc.Format;
     srvDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
-    srvDesc.Texture2D.MipLevels = desc.MipLevels;
-    srvDesc.Texture2D.MostDetailedMip = 0;
-    g_pd3dDevice->CreateShaderResourceView(pTexture, &srvDesc, out_texture);
-    pTexture->Release();
-    Size.x= image_width;
-    Size.y = image_height;
+    srvDesc.Texture2D.MipLevels = 1;
 
-    stbi_image_free(image_data);
+    g_pd3dDevice->CreateShaderResourceView(pTex, &srvDesc, out_texture);
+    pTex->Release();
+    stbi_image_free(data);
 
+    Size = Vec2(w, h);
     return true;
- 
 }
+
+// 텍스트 출력
 void RenderObject::Draw_Text(const Vec2& pos, const std::string& text, Color color)
 {
-
-
     ImGui::GetForegroundDrawList()->AddText(ImVec2(pos.x, pos.y), color, text.c_str());
 }
 
-void RenderObject::Draw_Back_Image(ImTextureID user_texture_id, const Vec2& Pos, const Vec2& Size, double direction)
+// 이미지 출력 (정방향)
+void RenderObject::Draw_Back_Image(ImTextureID tex, const Vec2& pos, const Vec2& size, double dir)
 {
-   
-    ImVec2 uv0 = ImVec2(0.0f, 0.0f);
-    ImVec2 uv1 = ImVec2(1.0f, 1.0f);
-    ImVec2 top_left(Pos.x, Pos.y);  // ���� ���
-    ImVec2 bottom_right(Pos.x + Size.x, Pos.y + Size.y);  // ������ �ϴ�
-    if (direction == 1.0) {
-        // �¿� ����: uv0.x�� uv1.x�� ������
-        uv0.x = 1.0f;
-        uv1.x = 0.0f;
-    }
-    ImGui::GetForegroundDrawList()->AddImage(user_texture_id, top_left, bottom_right, uv0, uv1);
-
-
+    ImVec2 uv0(0.0f, 0.0f), uv1(1.0f, 1.0f);
+    if (dir == 1.0) std::swap(uv0.x, uv1.x);
+    ImGui::GetForegroundDrawList()->AddImage(tex, ImVec2(pos.x, pos.y), ImVec2(pos.x + size.x, pos.y + size.y), uv0, uv1);
 }
-void RenderObject::Draw_Image(ImTextureID user_texture_id, const Vec2& Pos, const Vec2& Size, double direction)
+
+// 이미지 출력 (중심 기준)
+void RenderObject::Draw_Image(ImTextureID tex, const Vec2& pos, const Vec2& size, double dir)
 {
-    ImVec2 uv0 = ImVec2(0.0f, 0.0f);
-    ImVec2 uv1 = ImVec2(1.0f, 1.0f);
-    ImVec2 top_left(Pos.x- Size.x, Pos.y- Size.y);  // ���� ���
-    ImVec2 bottom_right(Pos.x + Size.x, Pos.y + Size.y);  // ������ �ϴ�
-    if (direction == 1.0) {
-        // �¿� ����: uv0.x�� uv1.x�� ������
-        uv0.x = 1.0f;
-        uv1.x = 0.0f;
-    }
-    ImGui::GetForegroundDrawList()->AddImage(user_texture_id, top_left, bottom_right,uv0,uv1);
- 
-  
-
-
+    ImVec2 uv0(0.0f, 0.0f), uv1(1.0f, 1.0f);
+    if (dir == 1.0) std::swap(uv0.x, uv1.x);
+    ImVec2 tl(pos.x - size.x, pos.y - size.y);
+    ImVec2 br(pos.x + size.x, pos.y + size.y);
+    ImGui::GetForegroundDrawList()->AddImage(tex, tl, br, uv0, uv1);
 }
+
+// 유니코드 -> UTF-8 변환
 std::string RenderObject::W_Calc_text_Tran(const std::wstring& text)
 {
     std::wstring_convert<std::codecvt_utf8<wchar_t>> conv;
     return conv.to_bytes(text);
 }
+
+// 유니코드 문자열의 픽셀 크기 계산
 Vec2 RenderObject::W_Calc_text_size(const std::wstring& text, int font_size)
 {
-   
-    
-    std::string Text = W_Calc_text_Tran(text);
-    auto ret = ImGui::CalcTextSize(Text.c_str());
-
-    return Vec2{ ret.x, ret.y };
+    return Calc_text_size(W_Calc_text_Tran(text), font_size);
 }
+
+// 일반 문자열의 픽셀 크기 계산
 Vec2 RenderObject::Calc_text_size(const std::string& text, int font_size)
 {
-    //int fontIdx = font_size >= g_dx->fonts.size() ? g_dx->fonts.size() - 1 : (font_size < 1 ? 1 : font_size);
-   // ImGui::PushFont(g_dx->fonts.at(fontIdx));
-
-    auto ret = ImGui::CalcTextSize(text.c_str());
-
-  
-
-    return Vec2{ ret.x, ret.y };
+    ImVec2 sz = ImGui::CalcTextSize(text.c_str());
+    return Vec2(sz.x, sz.y);
 }
+
+// 직사각형 그리기 (선 or 채우기)
 void RenderObject::screen_rectangle(const Vec2& p1, const Vec2& p2, uint32_t col, float rounding, float thickness, bool filled)
 {
-    if (!p1.is_valid() && !p2.is_valid())
-        return;
-
-    ImVec2 coord1{ p1.x, p1.y };
-    ImVec2 coord2{ p2.x, p2.y };
+    ImVec2 a(p1.x, p1.y), b(p2.x, p2.y);
     if (!filled)
-        ImGui::GetForegroundDrawList()->AddRect(coord1, coord2, col, rounding, 0, thickness);
+        ImGui::GetForegroundDrawList()->AddRect(a, b, col, rounding, 0, thickness);
     else
-        ImGui::GetForegroundDrawList()->AddRectFilled(coord1, coord2, col, rounding, 0);
+        ImGui::GetForegroundDrawList()->AddRectFilled(a, b, col, rounding, 0);
 }
+
+// (미사용) 두 지점 기준 직사각형 그리기
 void RenderObject::rectangle_2points(const Vec2& start, const Vec2& end, uint32_t color, const int width, const float rounding, const float thickness)
 {
-    if (!start.is_valid() && !end.is_valid())
-        return;
-
-
-
+    // 예약 함수 - 필요 시 구현
 }
 
-
-
+// 숫자 출력용 텍스처 배열로 레벨 숫자 그리기
+Vec2 RenderObject::DrawLevelNumber(int value, ID3D11ShaderResourceView* digits[10], Vec2 pos, Vec2 size)
+{
+    std::string numStr = std::to_string(value);
+    float spacing = 1.0f;
+    for (char c : numStr)
+    {
+        int d = c - '0';
+        Draw_Image(digits[d], pos, size, 0.0);
+        pos.x += size.x * 2 + spacing;
+    }
+    return pos;
+}
