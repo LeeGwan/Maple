@@ -1,7 +1,6 @@
 #include "LoadingMap.h"
 #include "../../../../Global.h"
-#include "LoadingMap.h"
-#include "../../../../Global.h"
+
 
 // -------------------------------------
 // 생성자
