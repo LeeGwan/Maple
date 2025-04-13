@@ -1,7 +1,5 @@
 #include "DamageLib.h"
 #include "../AnimationType.h"
-#include "DamageLib.h"
-#include "../AnimationType.h"
 
 // --------------------------
 // 생성자 - 기본값 초기화
