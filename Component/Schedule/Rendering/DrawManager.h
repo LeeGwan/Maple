@@ -1,9 +1,18 @@
 #pragma once
+
+// ------------------------------------------------------------
+// DrawManager
+// - 전체 렌더링(배경, 객체, UI 등)의 중심 컨트롤러 역할
+// ------------------------------------------------------------
 class DrawManager
 {
 public:
-	DrawManager();
-	void DrawManager_Init();
-	void Draw();
-};
+    // 생성자
+    DrawManager();
 
+    // 초기화 함수 (텍스처 로드, 상태 초기화 등)
+    void DrawManager_Init();
+
+    // 프레임마다 호출되는 전체 그리기 루틴
+    void Draw();
+};
