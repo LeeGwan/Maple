@@ -5,7 +5,7 @@
 // ------------------------------------------
 PlayerObject::PlayerObject(const std::string& _Name)
 {
-    PlayerName = L"이호호";
+    PlayerName = L"이관호";
     CurrentLv = 0;
 
     // 로그인 서버에서 현재 레벨 정보 가져오기
