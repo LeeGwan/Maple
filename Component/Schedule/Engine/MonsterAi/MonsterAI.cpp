@@ -1,9 +1,6 @@
 #include "MonsterAI.h"
 #include "../../../../Global.h"
 #include <algorithm>
-#include "MonsterAI.h"
-#include "../../../../Global.h"
-#include <algorithm>
 
 // -------------------------------------
 // 생성자
