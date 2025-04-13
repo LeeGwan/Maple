@@ -2,137 +2,131 @@
 #include "../Window/window.h"
 #include"../../Global.h"
 #include "Engine/Calculation/Calculation.h"
+// ScheduleManager.cpp
+
 ScheduleManager::~ScheduleManager()
 {
-	delete G_ctx;
+    delete G_ctx;  // ì „ì—­ ì»¨í…ìŠ¤íŠ¸ ë©”ëª¨ë¦¬ í•´ì œ
 }
 
 ScheduleManager::ScheduleManager(HINSTANCE In_hInstance)
 {
-	_hInstance = In_hInstance;
-	G_ctx->MakeWindows = make_shared<window>();
-
-	
+    _hInstance = In_hInstance;
+    G_ctx->MakeWindows = make_shared<window>();  // ìœˆë„ìš° ê°ì²´ ìƒì„±
 }
 
 void ScheduleManager::Update(HINSTANCE In_hInstance)
 {
+    // ë Œë”ë§ ê¸°ë°˜ ìŠ¤ì¼€ì¤„ ì“°ë ˆë“œ ìƒì„±
 
-	//·»´õ¸µ ±â¹İ ¾²·¹µå »ı¼º
-	ManagerSchedule Thread_Manager_Schedule;
+    // ë§¤ë‹ˆì € ìŠ¤ì¼€ì¤„ ì“°ë ˆë“œ
+    ManagerSchedule Thread_Manager_Schedule;
+    push(&Thread_Manager_Schedule);
 
-	push(&Thread_Manager_Schedule);
-	EngineSchedule Thread_Engine_Schedule;
+    // ì—”ì§„ ìŠ¤ì¼€ì¤„ ì“°ë ˆë“œ
+    EngineSchedule Thread_Engine_Schedule;
+    push(&Thread_Engine_Schedule);
 
-	push(&Thread_Engine_Schedule);
-	RenderSchedule Thread_Render_Schedule(In_hInstance);
-	
-	push(&Thread_Render_Schedule);
+    // ë Œë” ìŠ¤ì¼€ì¤„ ì“°ë ˆë“œ
+    RenderSchedule Thread_Render_Schedule(In_hInstance);
+    push(&Thread_Render_Schedule);
 
-	MakeALL();
-
+    // ëª¨ë“  ìŠ¤ì¼€ì¤„ì˜ Make í•¨ìˆ˜ ì‹¤í–‰
+    MakeALL();
 }
+
 void ScheduleManager::push(Schedule* InPut_Schedule)
 {
-	ScheduleList.push_back(InPut_Schedule);
+    ScheduleList.push_back(InPut_Schedule);  // ìŠ¤ì¼€ì¤„ ë¦¬ìŠ¤íŠ¸ì— ì¶”ê°€
 }
 
 void ScheduleManager::MakeALL()
 {
-	for (auto It_Schedule : ScheduleList)
-	{
-		It_Schedule->Make();
-	}
+    for (auto It_Schedule : ScheduleList)
+    {
+        It_Schedule->Make();  // ê° ìŠ¤ì¼€ì¤„ì˜ Make ì‹¤í–‰
+    }
 }
 
-
+// RenderSchedule.cpp
 
 RenderSchedule::RenderSchedule(HINSTANCE In_hInstance)
 {
-	_hInstance = In_hInstance;
+    _hInstance = In_hInstance;
 }
 
 void RenderSchedule::Make()
 {
-	thread RenderThread(bind(&RenderSchedule::Run,this));
-	/*
-	* std::bindÀÇ »ç¿ë ¸ñÀû
-	ÇÔ¼öÀÇ ÀÏºÎ ÀÎÀÚ °íÁ¤: ÇÔ¼ö¿¡ Àü´ŞÇÒ ÀÏºÎ ÀÎÀÚ¸¦ ¹Ì¸® °íÁ¤½ÃÅ°°í, ³ªÁß¿¡ ³ª¸ÓÁö ÀÎÀÚ¸¦ ³Ñ°Ü¼­ È£ÃâÇÒ ¼ö ÀÖ½À´Ï´Ù.
-
-	¸â¹ö ÇÔ¼ö È£ÃâÀ» °£´ÜÇÏ°Ô Ã³¸®: ¸â¹ö ÇÔ¼ö¸¦ »ç¿ëÇÒ ¶§ °´Ã¼¿Í ¸â¹ö ÇÔ¼ö¸¦ ÇÔ²² ¹ÙÀÎµùÇÏ¿© ÇÔ¼ö °´Ã¼·Î ¸¸µé ¼ö ÀÖ½À´Ï´Ù.
-
-	Äİ¹é ÇÔ¼ö Ã³¸®: ÇÔ¼öÀÇ ÀÏºÎ ÀÎÀÚ¸¦ ³ªÁß¿¡ Àü´ŞÇÒ ¼ö ÀÖ°Ô ÇØÁà¼­, ÁÖ·Î Äİ¹é ÇÔ¼ö¿¡¼­ À¯¿ëÇÏ°Ô »ç¿ëµË´Ï´Ù.
-	*/
-
-	RenderThread.join();
-
-	return ;
+    // ë Œë”ë§ ì „ìš© ì“°ë ˆë“œ ìƒì„± ë° ì‹¤í–‰
+    thread RenderThread(bind(&RenderSchedule::Run, this));
+    RenderThread.join();  // ë©”ì¸ ìŠ¤ë ˆë“œì—ì„œ ê¸°ë‹¤ë¦¼
 }
 
 void RenderSchedule::Run()
 {
-	
-
-	G_ctx->MakeWindows->Update(_hInstance);
-	return;
+    // ë Œë”ë§ ì—…ë°ì´íŠ¸ ì‹¤í–‰
+    G_ctx->MakeWindows->Update(_hInstance);
 }
+
+
+// EngineSchedule.cpp
 
 EngineSchedule::EngineSchedule()
 {
-
 }
 
 void EngineSchedule::Make()
 {
-	thread Engine_Thread(bind(&EngineSchedule::Run, this));
-
-	Engine_Thread.detach();
-
-}
-
-void EngineSchedule::Run_For_Player()
-{
-	//¿¹¿ÜÃ³¸® ³Ö¾îÁÖÀÚ
-	Calculation Player_Calc;
-	Player_Calc.Calculation_Init();
-	Player_Calc.Start_Calc("Player");
-	
-}
-
-void EngineSchedule::Run_For_Monster()
-{
-	Calculation Monster_Calc;
-	Monster_Calc.Calculation_Init();
-	Monster_Calc.Start_Calc("Monster");
-}
-
-void EngineSchedule::Run_For_Sound()
-{
-	while (1)
-	{
-		double DeltaTime = G_ctx->GetDeltaTime();
-		G_ctx->G_SoundList.Sound_Update(DeltaTime);
-		G_ctx->G_SoundList.DeleteSound(DeltaTime);
-		timeBeginPeriod(1);
-		Sleep(1);
-		timeEndPeriod(1);
-	}
-
+    // ì—”ì§„ ë©”ì¸ ë£¨í”„ ì‹¤í–‰ ì“°ë ˆë“œ ì‹œì‘
+    thread Engine_Thread(bind(&EngineSchedule::Run, this));
+    Engine_Thread.detach();  // ë°±ê·¸ë¼ìš´ë“œ ì‹¤í–‰
 }
 
 void EngineSchedule::Run()
 {
+    // í”Œë ˆì´ì–´, ëª¬ìŠ¤í„°, ì‚¬ìš´ë“œ ë³„ ì“°ë ˆë“œ ë¶„ë¦¬ ì‹¤í–‰
+    thread Engine_For_Player_Thread(bind(&EngineSchedule::Run_For_Player, this));
+    thread Engine_For_Monster_Thread(bind(&EngineSchedule::Run_For_Monster, this));
+    thread Engine_For_Sound_Thread(bind(&EngineSchedule::Run_For_Sound, this));
 
-	thread Engine_For_Player_Thread(bind(&EngineSchedule::Run_For_Player, this));
-
-	thread Engine_For_Monster_Thread(bind(&EngineSchedule::Run_For_Monster, this));
-
-	thread Engine_For_Sound_Thread(bind(&EngineSchedule::Run_For_Sound, this));
-	Engine_For_Player_Thread.detach();
-	Engine_For_Monster_Thread.detach();
-	Engine_For_Sound_Thread.detach();
-//¿£Áøµ¿ÀÛ
+    Engine_For_Player_Thread.detach();
+    Engine_For_Monster_Thread.detach();
+    Engine_For_Sound_Thread.detach();
 }
+
+void EngineSchedule::Run_For_Player()
+{
+    // í”Œë ˆì´ì–´ ê³„ì‚° ë£¨í‹´
+    Calculation Player_Calc;
+    Player_Calc.Calculation_Init();
+    Player_Calc.Start_Calc("Player");
+}
+
+void EngineSchedule::Run_For_Monster()
+{
+    // ëª¬ìŠ¤í„° ê³„ì‚° ë£¨í‹´
+    Calculation Monster_Calc;
+    Monster_Calc.Calculation_Init();
+    Monster_Calc.Start_Calc("Monster");
+}
+
+void EngineSchedule::Run_For_Sound()
+{
+    // ì‚¬ìš´ë“œ ê³„ì‚° ë£¨í‹´ - ì§€ì†ì ìœ¼ë¡œ ì‚¬ìš´ë“œ ì—…ë°ì´íŠ¸
+    while (1)
+    {
+        double DeltaTime = G_ctx->GetDeltaTime();
+        G_ctx->G_SoundList.Sound_Update(DeltaTime);
+        G_ctx->G_SoundList.DeleteSound(DeltaTime);
+
+        timeBeginPeriod(1);  // ì •í™•ë„ í–¥ìƒ
+        Sleep(1);
+        timeEndPeriod(1);
+    }
+}
+
+
+// ManagerSchedule.cpp
 
 ManagerSchedule::ManagerSchedule()
 {
@@ -140,41 +134,42 @@ ManagerSchedule::ManagerSchedule()
 
 void ManagerSchedule::Make()
 {
-	thread Manager_Thread(bind(&ManagerSchedule::Run, this));
-
-	Manager_Thread.detach();
-}
-
-void ManagerSchedule::Check_Manager_Obj(double DeltaTime)
-{
-	
-	G_ctx->G_ObjectManager->Create_Object();
-	G_ctx->G_ObjectManager->Check_Manager(DeltaTime);
+    // ë§¤ë‹ˆì € ìŠ¤ì¼€ì¤„ ì“°ë ˆë“œ ì‹¤í–‰
+    thread Manager_Thread(bind(&ManagerSchedule::Run, this));
+    Manager_Thread.detach();
 }
 
 void ManagerSchedule::Run()
 {
-	Timer Manager_Timer;
-	while (1)
-	{
-		if (!G_ctx->CanUseCalc)
-		{
-			Sleep(10);
-			continue;
-		}
-		break;
-	}
-	while (1)
-	{
-		Manager_Timer.Update();
-		Accumulator += Manager_Timer.GetDeltaTime();
-		while (Accumulator >= FixedTime)
-		{
-			Check_Manager_Obj(FixedTime);
-			Accumulator -= FixedTime;
-		}
-		timeBeginPeriod(1);
-		Sleep(1);
-		timeEndPeriod(1);
-	}
+    Timer Manager_Timer;
+
+    // ê³„ì‚° ê°€ëŠ¥ ìƒíƒœ ëŒ€ê¸°
+    while (!G_ctx->CanUseCalc)
+    {
+        Sleep(10);
+    }
+
+    // ê³ ì •ëœ ì‹œê°„ ê°„ê²©ìœ¼ë¡œ ê°ì²´ ë§¤ë‹ˆì§€ë¨¼íŠ¸
+    while (1)
+    {
+        Manager_Timer.Update();
+        Accumulator += Manager_Timer.GetDeltaTime();
+
+        while (Accumulator >= FixedTime)
+        {
+            Check_Manager_Obj(FixedTime);
+            Accumulator -= FixedTime;
+        }
+
+        timeBeginPeriod(1);
+        Sleep(1);
+        timeEndPeriod(1);
+    }
 }
+
+void ManagerSchedule::Check_Manager_Obj(double DeltaTime)
+{
+    G_ctx->G_ObjectManager->Create_Object();             // ê°ì²´ ìƒì„±
+    G_ctx->G_ObjectManager->Check_Manager(DeltaTime);    // ê°ì²´ ìƒíƒœ ê²€ì‚¬ ë° ê´€ë¦¬
+}
+
