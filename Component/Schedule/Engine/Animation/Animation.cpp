@@ -1,7 +1,3 @@
-﻿#include "Animation.h"
-#include "../../../../Global.h"
-#include "../../Rendering/RenderingObject.h"
-#include <algorithm>
 #include "Animation.h"
 #include "../../../../Global.h"
 #include "../../Rendering/RenderingObject.h"
